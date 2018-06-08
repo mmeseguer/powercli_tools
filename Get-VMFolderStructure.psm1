@@ -26,7 +26,7 @@ function Get-VMFolderStructure {
         # If not connected to VIServer and no server is specified drop error.
         if (!$global:defaultviserver -and !$Server)
         {
-            Write-Error 'You must connect to a vCenter Server or specify one.' -ErrorAction Stop
+            Write-Error 'You are not connected to any server, you must connect to a vCenter Server or specify one.' -ErrorAction Stop
         }
         # If not connected to VIServer but a server is specified we try to connect
         elseif (!$global:defaultviserver) {
@@ -76,8 +76,9 @@ function Get-VMFolderStructure {
         
     end {
         # Disconnect VIServer if connection was stablished by this module.
-        Disconnect-VIServer -Confirm:$false
-
+        if ($disconnect) {
+            Disconnect-VIServer -Confirm:$false    
+        }
         # Show sorted array of paths (for a correct recreation of folders).
         $fexport | Sort-Object
     }
