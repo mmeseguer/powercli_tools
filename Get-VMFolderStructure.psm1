@@ -11,7 +11,7 @@ function Get-VMFolderStructure {
     Get-VMFolderStructure | Out-File export.txt
 
     .NOTES
-    General notes
+    
     #>
     [CmdletBinding()]
     param (
