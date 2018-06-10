@@ -11,7 +11,10 @@ function Get-VMFolderStructure {
     Get-VMFolderStructure | Out-File export.txt
 
     .NOTES
-    
+    Name: Get-VMFolderStructure
+    Author: Marc Meseguer
+    Version 1.0
+        - Initial release.
     #>
     [CmdletBinding()]
     param (
