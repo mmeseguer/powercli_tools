@@ -23,7 +23,7 @@ function Get-VMFolderStructure {
     )
         
     begin {
-        # Initialize disconnect flag
+        # Initialize disconnect flag.
         $disconnect = $false
 
         # If not connected to VIServer and no server is specified drop error.
