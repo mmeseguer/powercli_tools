@@ -1,17 +1,17 @@
-function Get-VMFolderStructure {
+function Export-VMFolderStructure {
     <#
     .SYNOPSIS
-    Lists VMware vCenter folder path.
+    Exports an array of all VM Folders in a vCenter.
 
     .DESCRIPTION
-    With Get-VMFolderStructure you can get an array of the full path of all VMware vCenter's VM folders in order to recreate them in another vCenter Server.
+    With Export-VMFolderStructure you can get an array of the full path of all VMware vCenter's VM folders in order to recreate them in another vCenter Server.
     The result can be piped an exported to a file for future use.
 
     .EXAMPLE
-    Get-VMFolderStructure | Out-File export.txt
+    Export-VMFolderStructure | Out-File export.txt
 
     .NOTES
-    Name: Get-VMFolderStructure
+    Name: Export-VMFolderStructure
     Author: Marc Meseguer
     Version 1.0
         - Initial release.
@@ -78,7 +78,7 @@ function Get-VMFolderStructure {
     }
         
     end {
-        # Disconnect VIServer if connection was stablished by this module.
+        # Disconnect VIServer if connection was stablished by this function.
         if ($disconnect) {
             Disconnect-VIServer -Confirm:$false    
         }
@@ -86,4 +86,54 @@ function Get-VMFolderStructure {
         $fexport | Sort-Object
     }
     
+}
+function Import-VMFolderStructure {
+    [CmdletBinding()]
+    param (
+         # IP or DNS name of the VIServer. If already connected to a VIServer this parameter will be ignored.
+        [string]$Server,
+        # Path to the export file 
+        [string]$Path
+    )
+
+    begin {
+        # Initialize disconnect flag.
+        $disconnect = $false
+
+        # If not connected to VIServer and no server is specified drop error.
+        if (!$global:defaultviserver -and !$Server)
+        {
+            Write-Error 'You are not connected to any server, you must connect to a vCenter Server or specify one.' -ErrorAction Stop
+        }
+        # If not connected to VIServer but a server is specified we try to connect
+        elseif (!$global:defaultviserver) {
+            try {
+                Connect-VIServer -Server $Server -ErrorAction Stop
+                $disconnect = $true
+                Write-Verbose "Connected to $Server"
+            }
+            catch {
+                # If we cannot connect to VIServer drop error
+                Write-Error "Error trying to connect to $Server" -ErrorAction Stop
+            }           
+        
+        # If path is not valid drop error
+        
+        }
+        else {
+            Write-Verbose "Using already connected {$global:defaultviserver.Name}"
+        }
+
+    }
+
+    process {
+
+    }
+
+    end {
+        # Disconnect VIServer if connection was stablished by this function.
+        if ($disconnect) {
+            Disconnect-VIServer -Confirm:$false    
+        }
+    }
 }
