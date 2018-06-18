@@ -19,7 +19,13 @@ function Export-VMFolderStructure {
     [CmdletBinding()]
     param (
          # IP or DNS name of the VIServer. If already connected to a VIServer this parameter will be ignored.
-         [string]$Server
+         [string]$Server,
+         # Datacenter name. If no datacenter specified and there's only one datacenter we use it.
+         [string]$Datacenter,
+         # Path to the file of the export
+         [Parameter(Mandatory=$true)]
+         [ValidateScript({Test-Path (Split-Path $_) -PathType Container})]
+         [string]$Path
     )
         
     begin {
@@ -34,7 +40,7 @@ function Export-VMFolderStructure {
         # If not connected to VIServer but a server is specified we try to connect
         elseif (!$global:defaultviserver) {
             try {
-                Connect-VIServer -Server $Server -ErrorAction Stop
+                Connect-VIServer -Server $Server -ErrorAction
                 $disconnect = $true
                 Write-Verbose "Connected to $Server"
             }
@@ -47,21 +53,27 @@ function Export-VMFolderStructure {
             Write-Verbose "Using already connected {$global:defaultviserver.Name}"
         }
 
+        # If no Datacenter is specified we check if there's more than one
+        if (!$Datacenter -and (Get-Datacenter).Count -ne 1){
+            Write-Error "If there's more than one datacenter you have to select one."
+        }
+
     }
         
     process {
         # Declaration of special folder to not process them.
         $fexceptions = "Datacenters","vm","network","datastore","host"
+        
+        # Initialize collection of paths
+        $folder_collection = New-Object System.Collections.ArrayList
 
-        # Initialize export array.
-        $fexport = @()
         # Get all "VM" folders that are not in exceptions.
         $folders = Get-Folder -Type VM | Where-Object {$_.Name -notin $fexceptions}
 
         # Loop through folders.
         ForEach ($folder in $folders) {
-            # Build initial path.
-            $fpath = $folder.name
+            # Initialize path.
+            $fpath = ""
             # Obtain parent folder.
             $fparent = $folder.Parent
             
@@ -72,8 +84,15 @@ function Export-VMFolderStructure {
                 # Move fparent to its own parent.
                 $fparent = $fparent.Parent
             }
-            # Add the full path to our export array.
-            $fexport += $fpath
+            # Set properties
+            $folder_properties = @{
+                Name = $folder.Name
+                Path = $fpath
+            }
+            # Create object
+            $folder_object = New-Object -TypeName PSObject -Property $folder_properties
+            # Add object to collection
+            $folder_collection.Add($folder_object) | Out-Null
         }
     }
         
@@ -82,8 +101,8 @@ function Export-VMFolderStructure {
         if ($disconnect) {
             Disconnect-VIServer -Confirm:$false    
         }
-        # Show sorted array of paths (for a correct recreation of folders).
-        $fexport | Sort-Object
+        # Export sorted collection of paths (for a correct recreation of folders).
+        $folder_collection | Sort-Object -Property Path | Export-Csv -Path $Path
     }
     
 }
