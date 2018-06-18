@@ -68,8 +68,12 @@ function Export-VMFolderStructure {
         $folder_collection = New-Object System.Collections.ArrayList
 
         # Get all "VM" folders that are not in exceptions.
-        $folders = Get-Folder -Type VM | Where-Object {$_.Name -notin $fexceptions}
-
+        if ($Datacenter){
+            $folders = Get-Datacenter $Datacenter | Get-Folder -Type VM | Where-Object {$_.Name -notin $fexceptions}
+        }
+        else {
+            $folders = Get-Folder -Type VM | Where-Object {$_.Name -notin $fexceptions}
+        }
         # Loop through folders.
         ForEach ($folder in $folders) {
             # Initialize path.
@@ -102,7 +106,7 @@ function Export-VMFolderStructure {
             Disconnect-VIServer -Confirm:$false    
         }
         # Export sorted collection of paths (for a correct recreation of folders).
-        $folder_collection | Sort-Object -Property Path | Export-Csv -Path $Path
+        $folder_collection | Sort-Object -Property Path | Export-Csv -Path $Path -NoTypeInformation
     }
     
 }
@@ -111,7 +115,11 @@ function Import-VMFolderStructure {
     param (
          # IP or DNS name of the VIServer. If already connected to a VIServer this parameter will be ignored.
         [string]$Server,
-        # Path to the export file 
+        # Datacenter name. If no datacenter specified and there's only one datacenter we use it.
+        [string]$Datacenter,
+        # Path to the file of the export
+        [Parameter(Mandatory=$true)]
+        [ValidateScript({Test-Path $_ -PathType Leaf})]
         [string]$Path
     )
 
