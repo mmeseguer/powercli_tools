@@ -22,7 +22,7 @@ function Export-VMFolderStructure {
          [string]$Server,
          # Datacenter name. If no datacenter specified and there's only one datacenter we use it.
          [string]$Datacenter,
-         # Path to the file of the export
+         # Path to the file to export
          [Parameter(Mandatory=$true)]
          [ValidateScript({Test-Path (Split-Path $_) -PathType Container})]
          [string]$Path
@@ -55,7 +55,7 @@ function Export-VMFolderStructure {
 
         # If no Datacenter is specified we check if there's more than one
         if (!$Datacenter -and (Get-Datacenter).Count -ne 1){
-            Write-Error "If there's more than one datacenter you have to select one."
+            Write-Error "If there's more than one datacenter you have to select one." -ErrorAction Stop
         }
 
     }
@@ -117,7 +117,7 @@ function Import-VMFolderStructure {
         [string]$Server,
         # Datacenter name. If no datacenter specified and there's only one datacenter we use it.
         [string]$Datacenter,
-        # Path to the file of the export
+        # Path to the csv file to import
         [Parameter(Mandatory=$true)]
         [ValidateScript({Test-Path $_ -PathType Leaf})]
         [string]$Path
@@ -135,26 +135,40 @@ function Import-VMFolderStructure {
         # If not connected to VIServer but a server is specified we try to connect
         elseif (!$global:defaultviserver) {
             try {
-                Connect-VIServer -Server $Server -ErrorAction Stop
+                Connect-VIServer -Server $Server -ErrorAction
                 $disconnect = $true
                 Write-Verbose "Connected to $Server"
             }
             catch {
                 # If we cannot connect to VIServer drop error
                 Write-Error "Error trying to connect to $Server" -ErrorAction Stop
-            }           
-        
-        # If path is not valid drop error
-        
+            }            
         }
         else {
             Write-Verbose "Using already connected {$global:defaultviserver.Name}"
         }
-
+        
+        # If no Datacenter is specified we check if there's more than one
+        if (!$Datacenter -and (Get-Datacenter).Count -ne 1){
+            Write-Error "If there's more than one datacenter you have to select one." -ErrorAction Stop
+        }
     }
 
     process {
+        # Retrieve collection of folders
+        $folders = Import-Csv $Path
 
+        # Loop through folders
+        foreach ($folder in $folders){
+            # If there's no path we create the folder under the Datacenter
+            if (!$folder.Path){
+                (Get-View (Get-View -Viewtype datacenter -Filter @{"name"=$Datacenter}).vmfolder).CreateFolder($folder.Name)
+            }
+            # If there's a Path we create the folder under it
+            else {
+                New-Folder -Name $folder.Name -Location $folder.Path
+            }
+        }
     }
 
     end {
