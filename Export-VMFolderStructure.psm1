@@ -88,6 +88,11 @@ function Export-VMFolderStructure {
                 # Move fparent to its own parent.
                 $fparent = $fparent.Parent
             }
+
+            # Remove last "\" from the path
+            if ($fpath) {
+                $fpath = $fpath.Substring(0,$fpath.Length-1)
+            }
             # Set properties
             $folder_properties = @{
                 Name = $folder.Name
@@ -158,15 +163,27 @@ function Import-VMFolderStructure {
         # Retrieve collection of folders
         $folders = Import-Csv $Path
 
+        # Retrieve top level VM Folder
+        $folder_top = Get-Folder -Name vm
+
         # Loop through folders
         foreach ($folder in $folders){
             # If there's no path we create the folder under the Datacenter
             if (!$folder.Path){
-                (Get-View (Get-View -Viewtype datacenter -Filter @{"name"=$Datacenter}).vmfolder).CreateFolder($folder.Name)
+                $folder_top | New-Folder $folder.Name
+                #(Get-View (Get-View -Viewtype datacenter -Filter @{"name"=$Datacenter}).vmfolder).CreateFolder($folder.Name)
             }
             # If there's a Path we create the folder under it
             else {
-                New-Folder -Name $folder.Name -Location $folder.Path
+                # Split the path to iterate through it
+                $splitted_path = ($folder.Path -split ('\\'))
+                # Set the location to the top folder
+                $location = $folder_top
+                # Iterate through the path to get the last folder of it as the location of the new folder
+                foreach ($subpath in $splitted_path){
+                    $location = $location | Get-Folder -NoRecursion | Where-Object Name -eq $subpath
+                }
+                $location | New-Folder -Name $folder.Name
             }
         }
     }
