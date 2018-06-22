@@ -111,7 +111,7 @@ function Export-VMFolderStructure {
             Disconnect-VIServer -Confirm:$false    
         }
         # Export sorted collection of paths (for a correct recreation of folders).
-        $folder_collection | Sort-Object -Property Path | Export-Csv -Path $Path -NoTypeInformation
+        $folder_collection | Sort-Object -Property Path | Export-Csv -Path $Path -NoTypeInformation -Encoding unicode
     }
     
 }
