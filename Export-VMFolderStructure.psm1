@@ -171,7 +171,6 @@ function Import-VMFolderStructure {
             # If there's no path we create the folder under the Datacenter
             if (!$folder.Path){
                 $folder_top | New-Folder $folder.Name
-                #(Get-View (Get-View -Viewtype datacenter -Filter @{"name"=$Datacenter}).vmfolder).CreateFolder($folder.Name)
             }
             # If there's a Path we create the folder under it
             else {
