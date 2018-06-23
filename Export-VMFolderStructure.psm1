@@ -40,7 +40,7 @@ function Export-VMFolderStructure {
         # If not connected to VIServer but a server is specified we try to connect
         elseif (!$global:defaultviserver) {
             try {
-                Connect-VIServer -Server $Server -ErrorAction
+                Connect-VIServer -Server $Server -ErrorAction Stop
                 $disconnect = $true
                 Write-Verbose "Connected to $Server"
             }
@@ -140,7 +140,7 @@ function Import-VMFolderStructure {
         # If not connected to VIServer but a server is specified we try to connect
         elseif (!$global:defaultviserver) {
             try {
-                Connect-VIServer -Server $Server -ErrorAction
+                Connect-VIServer -Server $Server -ErrorAction Stop
                 $disconnect = $true
                 Write-Verbose "Connected to $Server"
             }
