@@ -215,6 +215,7 @@ function Import-VMFolderStructure {
                 foreach ($subpath in $splitted_path){
                     $location = $location | Get-Folder -NoRecursion | Where-Object Name -eq $subpath
                 }
+                # Create the folder
                 $location | New-Folder -Name $folder.Name
             }
         }
