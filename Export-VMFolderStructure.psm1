@@ -1,14 +1,22 @@
 function Export-VMFolderStructure {
     <#
     .SYNOPSIS
-    Exports an array of all VM Folders in a vCenter.
+    Exports a csv file with all VM folders and their paths.
 
     .DESCRIPTION
-    With Export-VMFolderStructure you can get an array of the full path of all VMware vCenter's VM folders in order to recreate them in another vCenter Server.
-    The result can be piped an exported to a file for future use.
+    With Export-VMFolderStructure you can get a csv file with the full path of all VMware vCenter's VM folders in order to recreate them in another vCenter Server.
+
+    .PARAMETER Path
+    Full path of the .csv file. Example: C:\Export\export.csv
+    
+    .PARAMETER Datacenter
+    Datacenter name. If no datacenter specified and there's only one datacenter we use it.
+
+    .PARAMETER Server
+    IP or DNS name of the VIServer. If already connected to a VIServer this parameter will be ignored.
 
     .EXAMPLE
-    Export-VMFolderStructure | Out-File export.txt
+    Export-VMFolderStructure -Path C:\Export\export.csv -Datacenter "Datacenter test" -Server 192.168.111.111
 
     .NOTES
     Name: Export-VMFolderStructure
@@ -18,14 +26,14 @@ function Export-VMFolderStructure {
     #>
     [CmdletBinding()]
     param (
-         # IP or DNS name of the VIServer. If already connected to a VIServer this parameter will be ignored.
-         [string]$Server,
-         # Datacenter name. If no datacenter specified and there's only one datacenter we use it.
-         [string]$Datacenter,
-         # Path to the file to export
-         [Parameter(Mandatory=$true)]
-         [ValidateScript({Test-Path (Split-Path $_) -PathType Container})]
-         [string]$Path
+        # Path to the file to export
+        [Parameter(Mandatory=$true)]
+        [ValidateScript({Test-Path (Split-Path $_) -PathType Container})]
+        [string]$Path,
+        # Datacenter name. If no datacenter specified and there's only one datacenter we use it.
+        [string]$Datacenter,
+        # IP or DNS name of the VIServer. If already connected to a VIServer this parameter will be ignored.
+        [string]$Server
     )
         
     begin {
@@ -116,17 +124,42 @@ function Export-VMFolderStructure {
     
 }
 function Import-VMFolderStructure {
+    <#
+    .SYNOPSIS
+    Create a vCenter VM folder structure using an imported .csv.
+
+    .DESCRIPTION
+    With Import-VMFolderStructure you can create a vCenter VM folder structure using a .csv created with Export-VMFolderStructure. It's highly recommended to import into an empty VM folder structure.
+
+    .PARAMETER Path
+    Full path of the .csv file. Example: C:\Export\export.csv
+    
+    .PARAMETER Datacenter
+    Datacenter name. If no datacenter specified and there's only one datacenter we use it.
+
+    .PARAMETER Server
+    IP or DNS name of the VIServer. If already connected to a VIServer this parameter will be ignored.
+
+    .EXAMPLE
+    Import-VMFolderStructure -Path C:\Export\export.csv -Datacenter "Datacenter test" -Server 192.168.111.111
+
+    .NOTES
+    Name: Import-VMFolderStructure
+    Author: Marc Meseguer
+    Version 1.0
+        - Initial release.
+    #>
     [CmdletBinding()]
     param (
-         # IP or DNS name of the VIServer. If already connected to a VIServer this parameter will be ignored.
-        [string]$Server,
-        # Datacenter name. If no datacenter specified and there's only one datacenter we use it.
-        [string]$Datacenter,
-        # Path to the csv file to import
+        # Path to the file to import
         [Parameter(Mandatory=$true)]
         [ValidateScript({Test-Path $_ -PathType Leaf})]
-        [string]$Path
-    )
+        [string]$Path,
+        # Datacenter name. If no datacenter specified and there's only one datacenter we use it.
+        [string]$Datacenter,
+        # IP or DNS name of the VIServer. If already connected to a VIServer this parameter will be ignored.
+        [string]$Server
+)
 
     begin {
         # Initialize disconnect flag.
