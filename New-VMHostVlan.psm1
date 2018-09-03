@@ -17,7 +17,46 @@ function New-VMHostVlan {
     param (
         # IP or DNS name of the VIServer. If already connected to a VIServer this parameter will be ignored.
         [string]$Server
-)
+    )
+
+    begin {
+        # Initialize disconnect flag.
+        $disconnect = $false
+
+        # If not connected to VIServer and no server is specified drop error.
+        if (!$global:defaultviserver -and !$Server)
+        {
+            Write-Error 'You are not connected to any server, you must connect to an ESXi Server or specify one.' -ErrorAction Stop
+        }
+        # If not connected to VIServer but a server is specified we try to connect
+        elseif (!$global:defaultviserver) {
+            try {
+                Connect-VIServer -Server $Server -ErrorAction Stop | Out-Null
+                $disconnect = $true
+                Write-Verbose "Connected to $Server."
+            }
+            catch {
+                # If we cannot connect to VIServer drop error
+                Write-Error "Error trying to connect to $Server." -ErrorAction Stop
+            }            
+        }
+        else {
+            Write-Verbose "Using already connected {$global:defaultviserver.Name}."
+        }
+        # If connected to a product that is not ESXi drop error
+        if ($global:defaultviserver.ProductLine -ne "embeddedEsx") {
+            Write-Error "You must connect to an ESXi server." -ErrorAction Stop
+        }
+    }
+    process {
+        
+    }
+    end {
+        # Disconnect VIServer if connection was stablished by this function.
+        if ($disconnect) {
+            Disconnect-VIServer -Confirm:$false    
+        }
+    }
 }
 #############################
 ## Nombre: Creacion_VLANS.ps1
