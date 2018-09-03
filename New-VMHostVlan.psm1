@@ -1,22 +1,46 @@
 function New-VMHostVlan {
     <#
     .SYNOPSIS
-    Creates a range of VLANs (Virtual Port Groups) to an ESXi server
+    Creates a range of VLANs (Virtual Port Groups) in bulk to an ESXi server.
     
     .DESCRIPTION
-    Long description
+    This function creates VLANs (Virtual Port Groups) in bulk to an ESXi server.
+    You must provide a numeric $First VLAN and, if you want to create a range of VLANs, a numeric $End should be provided too.
     
+    .PARAMETER Start
+    First number of VLAN to create.
+
+    .PARAMETER End
+    Last number of VLAN to create. If not specified it just create the one of Start parameter.
+
+    .PARAMETER Server
+    IP or DNS name of the VIServer. If already connected to a VIServer this parameter will be ignored.
+
+    .PARAMETER Vswitch
+    vSwitch where to create the VLAN/s. Defaults to 'vSwitch0'
+
+    .PARAMETER Prefix
+    Prefix of the VLAN name. Defaults to 'VLAN'.
+
     .EXAMPLE
-    An example
-    
-    .NOTES
-    General notes
+    New-VMHostVlan -Start 100 -End 150 -Server 192.168.168.168 -Vswitch 'vSwitch0'
     #>
 
     [CmdletBinding()]
     param (
+        # First VLAN to create
+        [Parameter(Mandatory=$true)]
+        [int]$Start,
+        # Ending VLAN to create (if not specified we make it's value the same as the $Start to just create one)
+        # Validate that it's bigger than $Start VLAN
+        [ValidateScript({if ($Start -le $_){$true}})]
+        [int]$End=$Start,
         # IP or DNS name of the VIServer. If already connected to a VIServer this parameter will be ignored.
-        [string]$Server
+        [string]$Server,
+        # Virtual Switch to create the VLANs (by default vSwitch0)
+        [string]$Vswitch='vSwitch0',
+        # Prefix to use in the name of the VLAN
+        [string]$Prefix='VLAN'
     )
 
     begin {
@@ -49,7 +73,10 @@ function New-VMHostVlan {
         }
     }
     process {
-        
+        # Loop through the range and create the VLANs
+        for ($i=$Start; $i -le $End; $i++) {
+            New-VirtualPortGroup -VirtualSwitch $Vswitch -Name $Prefix$i -VlanID $i
+        }
     }
     end {
         # Disconnect VIServer if connection was stablished by this function.
@@ -58,35 +85,3 @@ function New-VMHostVlan {
         }
     }
 }
-#############################
-## Nombre: Creacion_VLANS.ps1
-## Descripción: Crea VLANs en un rango especificado en un host ESXi, con la nomenclatura de beServices.
-## IMPORTANTE: Crea estas VLANs en vSwitch0, si las queremos en otro vSwitch hay que editar la variable $vswitch con el deseado.
-## Versión: 1.0
-#############################
-
-##### Variables fijas ####
-$vswitch = "vSwitch0"
-
-#### Obtenemos variables ####
-# Variables de conexión
-#$server = Read-Host -Prompt "Introduce IP de host ESXi"
-$user = Read-Host -Prompt "Introduce usuario de host ESXi"
-$password = Read-Host -Prompt "Introduce password de host ESXi" -AsSecureString
-#$servers= 109..112
-
-# Variables de VLANs
-Write-Output = "Este script crea VLANs dentro de un rango."
-$vlan_inicial = Read-Host -Prompt "Introduce VLAN inicial (esta también se creará)"
-$vlan_final = Read-Host -Prompt "Introduce VLAN final (esta también se creará)"
-
-#### Cuerpo del script ####
-# Conectamos con el nodo ESXi
-ForEach ($server in $servers) {
-    Connect-VIserver "192.168.100.$server" -User $user -Password ([Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($password)))
-    # Creamos VLANs dentro del rango introducido
-    for ($i=[int]$vlan_inicial; $i -le [int]$vlan_final; $i++) {
-        New-VirtualPortGroup -VirtualSwitch $vswitch -Name VLAN$i -VlanID $i
-    }
-    Disconnect-VIServer -Force -Confirm:$false
-    }
